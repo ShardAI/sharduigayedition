@@ -7,13 +7,17 @@ local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
+-- Load modules
+local ManusESP = loadstring(game:HttpGet(repo .. 'modules/ManusESP.lua'))()
+local Invisibility = loadstring(game:HttpGet(repo .. 'modules/Invisibility.lua'))()
+
 local Window = Library:CreateWindow({
     -- Set Center to true if you want the menu to appear in the center
     -- Set AutoShow to true if you want the menu to appear when it is created
     -- Position and Size are also valid options here
     -- but you do not need to define them unless you are changing them :)
 
-    Title = 'Example menu',
+    Title = 'ShardH@ck',
     Center = true,
     AutoShow = true,
     TabPadding = 8,
@@ -29,8 +33,18 @@ local Window = Library:CreateWindow({
 local Tabs = {
     -- Creates a new tab titled Main
     Main = Window:AddTab('Main'),
+    ['Visuals'] = Window:AddTab('Visuals'),
+    ['Misc'] = Window:AddTab('Misc'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
+
+-- Setup modules
+ManusESP:SetupTab(Tabs.Visuals)
+Invisibility:SetupTab(Tabs.Misc)
+
+-- Initialize modules
+ManusESP:Initialize()
+Invisibility:Initialize()
 
 -- Groupbox and Tabbox inherit the same functions
 -- except Tabboxes you have to call the functions on a tab (Tabbox:AddTab(name))
