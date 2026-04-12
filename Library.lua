@@ -3601,18 +3601,31 @@ function Library:CreateWindow(...)
     return Window;
 end;
 
---- Масштабирует весь UI (окно + HUD элементы).
+--- Масштабирует только окно UI.
 --- @param scale number — коэффициент масштабирования (например: 0.5 = половина, 1.0 = норма, 1.5 = полтора размера)
-function Library.SetScale(scale)
+function Library.SetWindowScale(scale)
     local clampedScale = math.clamp(tonumber(scale) or 1, 0.25, 3.0);
     
     if Library.WindowScale then
         Library.WindowScale.Scale = clampedScale;
     end
+end;
+
+--- Масштабирует только HUD элементы (Watermark, Keybinds, Notifications).
+--- @param scale number — коэффициент масштабирования (например: 0.5 = половина, 1.0 = норма, 1.5 = полтора размера)
+function Library.SetHudScale(scale)
+    local clampedScale = math.clamp(tonumber(scale) or 1, 0.25, 3.0);
     
     if Library.HudScale then
         Library.HudScale.Scale = clampedScale;
     end
+end;
+
+--- Масштабирует весь UI (окно + HUD элементы).
+--- @param scale number — коэффициент масштабирования (например: 0.5 = половина, 1.0 = норма, 1.5 = полтора размера)
+function Library.SetScale(scale)
+    Library.SetWindowScale(scale);
+    Library.SetHudScale(scale);
 end;
 
 local function OnPlayerChange()
