@@ -2757,6 +2757,13 @@ do
     Library.WatermarkText = WatermarkLabel;
     Library:MakeDraggable(Library.Watermark);
 
+    -- Create UIScale for watermark scaling
+    local watermarkUiScale = Instance.new('UIScale');
+    watermarkUiScale.Name = 'WatermarkUIScale';
+    watermarkUiScale.Scale = 1;
+    watermarkUiScale.Parent = WatermarkOuter;
+    Library.WatermarkScale = watermarkUiScale;
+
 
 
     local KeybindOuter = Library:Create('Frame', {
@@ -2827,6 +2834,13 @@ do
     Library.KeybindFrame = KeybindOuter;
     Library.KeybindContainer = KeybindContainer;
     Library:MakeDraggable(KeybindOuter);
+
+    -- Create UIScale for keybind frame scaling
+    local keybindUiScale = Instance.new('UIScale');
+    keybindUiScale.Name = 'KeybindUIScale';
+    keybindUiScale.Scale = 1;
+    keybindUiScale.Parent = KeybindOuter;
+    Library.KeybindScale = keybindUiScale;
 end;
 
 function Library:SetWatermarkVisibility(Bool)
@@ -3587,7 +3601,7 @@ function Library:CreateWindow(...)
     return Window;
 end;
 
---- Масштабирует весь UI окна.
+--- Масштабирует весь UI окна, а также HUD элементы (ватермарка и кейбинды).
 --- @param scale number — коэффициент масштабирования (например: 0.5 = половина, 1.0 = норма, 1.5 = полтора размера)
 function Library.SetScale(scale)
     if not Library.WindowScale then
@@ -3596,6 +3610,16 @@ function Library.SetScale(scale)
     
     local clampedScale = math.clamp(tonumber(scale) or 1, 0.25, 3.0);
     Library.WindowScale.Scale = clampedScale;
+    
+    -- Apply scale to watermark if it exists
+    if Library.WatermarkScale then
+        Library.WatermarkScale.Scale = clampedScale;
+    end;
+    
+    -- Apply scale to keybind frame if it exists
+    if Library.KeybindScale then
+        Library.KeybindScale.Scale = clampedScale;
+    end;
 end;
 
 local function OnPlayerChange()
