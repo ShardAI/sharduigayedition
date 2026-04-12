@@ -291,7 +291,7 @@ local SaveManager = {} do
 	end
 
 
-    -- SaveManager:BuildFolderTree() -- УДАЛЕНО, так как Library еще не задан
+	SaveManager:BuildFolderTree()
 end
 
 return SaveManager
