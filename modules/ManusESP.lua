@@ -235,33 +235,13 @@ end
 local Module = {}
 
 function Module:SetupTab(Tab)
-    Tab:AddToggle("ESP_Enabled", {Text = "ESP Enabled", Default = true}):AddCallback(function(Value)
-        SETTINGS.ESP_Enabled = Value
-    end)
-    
-    Tab:AddToggle("Chams_Enabled", {Text = "Chams", Default = true}):AddCallback(function(Value)
-        SETTINGS.Chams_Enabled = Value
-    end)
-    
-    Tab:AddToggle("Corners_Enabled", {Text = "Corners", Default = true}):AddCallback(function(Value)
-        SETTINGS.Corners_Enabled = Value
-    end)
-    
-    Tab:AddToggle("Boxes_Enabled", {Text = "Boxes", Default = true}):AddCallback(function(Value)
-        SETTINGS.Boxes_Enabled = Value
-    end)
-    
-    Tab:AddToggle("Tracers_Enabled", {Text = "Tracers", Default = true}):AddCallback(function(Value)
-        SETTINGS.Tracers_Enabled = Value
-    end)
-    
-    Tab:AddToggle("Anti_Invis_Enabled", {Text = "Anti-Invis", Default = true}):AddCallback(function(Value)
-        SETTINGS.Anti_Invis_Enabled = Value
-    end)
-    
-    Tab:AddColorPicker("ESP_Color", {Text = "ESP Color", Default = SETTINGS.Colors.Default}):AddCallback(function(Color)
-        SETTINGS.Colors.Default = Color
-    end)
+    Tab:AddToggle("ESP_Enabled", {Text = "ESP Enabled", Default = true, Callback = function(Value) SETTINGS.ESP_Enabled = Value end})
+    Tab:AddToggle("Chams_Enabled", {Text = "Chams", Default = true, Callback = function(Value) SETTINGS.Chams_Enabled = Value end})
+    Tab:AddToggle("Corners_Enabled", {Text = "Corners", Default = true, Callback = function(Value) SETTINGS.Corners_Enabled = Value end})
+    Tab:AddToggle("Boxes_Enabled", {Text = "Boxes", Default = true, Callback = function(Value) SETTINGS.Boxes_Enabled = Value end})
+    Tab:AddToggle("Tracers_Enabled", {Text = "Tracers", Default = true, Callback = function(Value) SETTINGS.Tracers_Enabled = Value end})
+    Tab:AddToggle("Anti_Invis_Enabled", {Text = "Anti-Invis", Default = true, Callback = function(Value) SETTINGS.Anti_Invis_Enabled = Value end})
+    Tab:AddColorPicker("ESP_Color", {Text = "ESP Color", Default = SETTINGS.Colors.Default, Callback = function(Color) SETTINGS.Colors.Default = Color end})
 end
 
 function Module:Initialize()

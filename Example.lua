@@ -7,9 +7,10 @@ local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
--- Load modules
-local ManusESP = loadstring(game:HttpGet(repo .. 'modules/ManusESP.lua'))()
-local Invisibility = loadstring(game:HttpGet(repo .. 'modules/Invisibility.lua'))()
+-- Load modules (local files for testing)
+-- For Roblox execution, replace these URLs with your actual raw GitHub URLs
+local ManusESP = loadstring(game:HttpGet('https://raw.githubusercontent.com/ShardAI/sharduigayedition/main/modules/ManusESP.lua'))()
+local Invisibility = loadstring(game:HttpGet('https://raw.githubusercontent.com/ShardAI/sharduigayedition/main/modules/Invisibility.lua'))()
 
 local Window = Library:CreateWindow({
     -- Set Center to true if you want the menu to appear in the center
