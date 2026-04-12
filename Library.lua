@@ -2749,6 +2749,7 @@ do
         Size = UDim2.new(1, -4, 1, 0);
         TextSize = 14;
         TextXAlignment = Enum.TextXAlignment.Left;
+        TextTruncate = Enum.TextTruncate.AtEnd;
         ZIndex = 203;
         Parent = InnerFrame;
     });
@@ -2756,6 +2757,13 @@ do
     Library.Watermark = WatermarkOuter;
     Library.WatermarkText = WatermarkLabel;
     Library:MakeDraggable(Library.Watermark);
+
+    -- Create UIScale for watermark scaling
+    local watermarkUiScale = Instance.new('UIScale');
+    watermarkUiScale.Name = 'WatermarkUIScale';
+    watermarkUiScale.Scale = 1;
+    watermarkUiScale.Parent = WatermarkOuter;
+    Library.WatermarkScale = watermarkUiScale;
 
 
 
@@ -2799,6 +2807,7 @@ do
         Size = UDim2.new(1, 0, 0, 20);
         Position = UDim2.fromOffset(5, 2),
         TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd;
 
         Text = 'Keybinds';
         ZIndex = 104;
@@ -2827,6 +2836,13 @@ do
     Library.KeybindFrame = KeybindOuter;
     Library.KeybindContainer = KeybindContainer;
     Library:MakeDraggable(KeybindOuter);
+
+    -- Create UIScale for keybind frame scaling
+    local keybindUiScale = Instance.new('UIScale');
+    keybindUiScale.Name = 'KeybindUIScale';
+    keybindUiScale.Scale = 1;
+    keybindUiScale.Parent = KeybindOuter;
+    Library.KeybindScale = keybindUiScale;
 end;
 
 function Library:SetWatermarkVisibility(Bool)
@@ -2943,7 +2959,7 @@ function Library:CreateWindow(...)
         Config.AutoShow = Arguments[2] or false;
     end
 
-    if type(Config.Title) ~= 'string' then Config.Title = 'No title' end
+    if type(Config.Title) ~= 'string' then Config.Title = 'ShardH@ck' end
     if type(Config.TabPadding) ~= 'number' then Config.TabPadding = 0 end
     if type(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
 
@@ -3587,7 +3603,7 @@ function Library:CreateWindow(...)
     return Window;
 end;
 
---- Масштабирует весь UI окна.
+--- Масштабирует весь UI окна, а также HUD элементы (ватермарка и кейбинды).
 --- @param scale number — коэффициент масштабирования (например: 0.5 = половина, 1.0 = норма, 1.5 = полтора размера)
 function Library.SetScale(scale)
     if not Library.WindowScale then
@@ -3596,6 +3612,16 @@ function Library.SetScale(scale)
     
     local clampedScale = math.clamp(tonumber(scale) or 1, 0.25, 3.0);
     Library.WindowScale.Scale = clampedScale;
+    
+    -- Apply scale to watermark if it exists
+    if Library.WatermarkScale then
+        Library.WatermarkScale.Scale = clampedScale;
+    end;
+    
+    -- Apply scale to keybind frame if it exists
+    if Library.KeybindScale then
+        Library.KeybindScale.Scale = clampedScale;
+    end;
 end;
 
 local function OnPlayerChange()
