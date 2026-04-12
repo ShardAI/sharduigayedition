@@ -1,1 +1,1 @@
-Nothing should be ignored based on the provided file changes. The only modified file is 'Library.lua', which is a source code file and should not be added to .gitignore.
+Nothing to output - the change list contains only a single Lua source file (ScaleHandler.lua) which should not be ignored.
