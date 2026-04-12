@@ -2685,7 +2685,7 @@ do
         Position = UDim2.new(0, 0, 0, 40);
         Size = UDim2.new(0, 300, 0, 200);
         ZIndex = 100;
-        Parent = ScreenGui;
+        Parent = Library.HudContainer;
     });
 
     Library:Create('UIListLayout', {
@@ -2701,7 +2701,7 @@ do
         Size = UDim2.new(0, 213, 0, 20);
         ZIndex = 200;
         Visible = false;
-        Parent = ScreenGui;
+        Parent = Library.HudContainer;
     });
 
     local WatermarkInner = Library:Create('Frame', {
@@ -2766,7 +2766,7 @@ do
         Size = UDim2.new(0, 210, 0, 20);
         Visible = false;
         ZIndex = 100;
-        Parent = ScreenGui;
+        Parent = Library.HudContainer;
     });
 
     local KeybindInner = Library:Create('Frame', {
@@ -2976,6 +2976,20 @@ function Library:CreateWindow(...)
     uiScale.Scale = 1;
     uiScale.Parent = Outer;
     Library.WindowScale = uiScale;
+
+    -- Create HUD container for elements that need separate scaling (Watermark, Keybinds, Notifications)
+    local hudContainer = Instance.new('Frame');
+    hudContainer.Name = 'HudContainer';
+    hudContainer.Size = UDim2.new(1, 0, 1, 0);
+    hudContainer.BackgroundTransparency = 1;
+    hudContainer.Parent = ScreenGui;
+
+    local hudScale = Instance.new('UIScale');
+    hudScale.Name = 'HudUIScale';
+    hudScale.Scale = 1;
+    hudScale.Parent = hudContainer;
+    Library.HudScale = hudScale;
+    Library.HudContainer = hudContainer;
 
     Library:MakeDraggable(Outer, 25);
 
@@ -3587,15 +3601,18 @@ function Library:CreateWindow(...)
     return Window;
 end;
 
---- Масштабирует весь UI окна.
+--- Масштабирует весь UI (окно + HUD элементы).
 --- @param scale number — коэффициент масштабирования (например: 0.5 = половина, 1.0 = норма, 1.5 = полтора размера)
 function Library.SetScale(scale)
-    if not Library.WindowScale then
-        return;
-    end;
-    
     local clampedScale = math.clamp(tonumber(scale) or 1, 0.25, 3.0);
-    Library.WindowScale.Scale = clampedScale;
+    
+    if Library.WindowScale then
+        Library.WindowScale.Scale = clampedScale;
+    end
+    
+    if Library.HudScale then
+        Library.HudScale.Scale = clampedScale;
+    end
 end;
 
 local function OnPlayerChange()
