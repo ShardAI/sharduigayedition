@@ -2749,6 +2749,7 @@ do
         Size = UDim2.new(1, -4, 1, 0);
         TextSize = 14;
         TextXAlignment = Enum.TextXAlignment.Left;
+        TextTruncate = Enum.TextTruncate.AtEnd;
         ZIndex = 203;
         Parent = InnerFrame;
     });
@@ -2806,6 +2807,7 @@ do
         Size = UDim2.new(1, 0, 0, 20);
         Position = UDim2.fromOffset(5, 2),
         TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd;
 
         Text = 'Keybinds';
         ZIndex = 104;
@@ -2957,7 +2959,7 @@ function Library:CreateWindow(...)
         Config.AutoShow = Arguments[2] or false;
     end
 
-    if type(Config.Title) ~= 'string' then Config.Title = 'No title' end
+    if type(Config.Title) ~= 'string' then Config.Title = 'ShardH@ck' end
     if type(Config.TabPadding) ~= 'number' then Config.TabPadding = 0 end
     if type(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
 
