@@ -85,9 +85,51 @@ local Library = {
 
     Signals = {};
     ScreenGui = ScreenGui;
+    
+    -- Liquid Glass Effect Settings
+    LiquidGlass = false; -- Toggle this BEFORE creating windows to enable liquid glass effect
 };
 local Toggles = {}
 local Options = {}
+
+-- Import Liquid Glass module (loaded dynamically when needed)
+local LiquidGlassModule = nil
+local function LoadLiquidGlassModule()
+    if not LiquidGlassModule then
+        -- The module will be loaded inline below to avoid external dependencies
+        LiquidGlassModule = EmbeddedLiquidGlassModule
+    end
+    return LiquidGlassModule
+end
+
+-- Embedded Liquid Glass Module Implementation
+-- This is a self-contained version that works without external files
+local EmbeddedLiquidGlassModule = {
+    -- Global toggle for all liquid glass effects
+    Enabled = false,
+    
+    -- All active liquid glass elements
+    ActiveElements = {},
+    
+    -- Configuration
+    Config = {
+        BlurStrength = 0.6,
+        RefractionStrength = 0.15,
+        Opacity = 0.7,
+        SaturationBoost = 1.2,
+        BrightnessAdjust = 0.1,
+        EdgeHighlightIntensity = 0.3,
+        ShadowIntensity = 0.2,
+        CornerRadius = 8,
+        MinFrameSize = 20,
+        UpdateThrottle = 0,
+        UseNoiseTexture = true,
+        NoiseOpacity = 0.05,
+    },
+    
+    -- Internal state
+    _updateConnection = nil,
+}
 
 local RainbowStep = 0
 local Hue = 0
@@ -2926,9 +2968,17 @@ function Library:CreateWindow(...)
         Config.AnchorPoint = Vector2.new(0.5, 0.5)
         Config.Position = UDim2.fromScale(0.5, 0.5)
     end
+    
+    -- Check if Liquid Glass effect is enabled (must be set BEFORE creating window)
+    local useLiquidGlass = Library.LiquidGlass == true
+    if useLiquidGlass then
+        LoadLiquidGlassModule()
+        EmbeddedLiquidGlassModule.Enabled = true
+    end
 
     local Window = {
         Tabs = {};
+        IsLiquidGlass = useLiquidGlass;
     };
 
     local Outer = Library:Create('TextButton', {
@@ -3530,5 +3580,498 @@ end;
 
 Players.PlayerAdded:Connect(OnPlayerChange);
 Players.PlayerRemoving:Connect(OnPlayerChange);
+
+-- ============================================
+-- LIQUID GLASS EFFECT IMPLEMENTATION
+-- ============================================
+-- Full implementation of the liquid glass effect module embedded in the library
+-- This provides macOS-style frosted glass effects for GUI elements
+
+-- Helper functions for Liquid Glass effect
+local function CreateRoundedCorner(parent, cornerRadius, color, transparency)
+    local corners = {}
+    local cornerImages = {
+        TopLeft = "rbxassetid://14279562677",
+        TopRight = "rbxassetid://14279562856",
+        BottomLeft = "rbxassetid://14279562532",
+        BottomRight = "rbxassetid://14279562401",
+    }
+    
+    for position, imageId in pairs(cornerImages) do
+        local corner = Instance.new("ImageLabel")
+        corner.Image = imageId
+        corner.Size = UDim2.fromOffset(cornerRadius * 2, cornerRadius * 2)
+        corner.BackgroundTransparency = 1
+        corner.ImageColor3 = color or Color3.new(1, 1, 1)
+        corner.ImageTransparency = transparency or 0
+        corner.ScaleType = Enum.ScaleType.Stretch
+        corner.Parent = parent
+        
+        if position == "TopLeft" then
+            corner.Position = UDim2.fromOffset(0, 0)
+        elseif position == "TopRight" then
+            corner.Position = UDim2.new(1, -cornerRadius * 2, 0, 0)
+        elseif position == "BottomLeft" then
+            corner.Position = UDim2.new(0, 0, 1, -cornerRadius * 2)
+        elseif position == "BottomRight" then
+            corner.Position = UDim2.new(1, -cornerRadius * 2, 1, -cornerRadius * 2)
+        end
+        
+        corners[position] = corner
+    end
+    
+    return corners
+end
+
+local function CreateViewportCapture(parent)
+    local viewport = Instance.new("ViewportFrame")
+    viewport.Size = UDim2.fromScale(1, 1)
+    viewport.BackgroundTransparency = 1
+    viewport.Parent = parent
+    
+    local vpCamera = Instance.new("Camera")
+    vpCamera.Parent = viewport
+    viewport.CurrentCamera = vpCamera
+    
+    local vpLighting = Instance.new("Lighting")
+    vpLighting.Parent = viewport
+    vpLighting.Ambient = Lighting.Ambient
+    vpLighting.Brightness = Lighting.Brightness
+    
+    return viewport, vpCamera
+end
+
+local function ApplySimulatedBlur(parent, intensity, colorTint)
+    local layers = math.clamp(math.floor(intensity * 5), 1, 5)
+    local blurFrames = {}
+    
+    for i = 1, layers do
+        local blurFrame = Instance.new("Frame")
+        blurFrame.Size = UDim2.fromScale(1, 1)
+        blurFrame.BackgroundTransparency = 1 - ((i / layers) * 0.1)
+        blurFrame.BackgroundColor3 = colorTint or Color3.new(1, 1, 1)
+        blurFrame.BorderSizePixel = 0
+        blurFrame.ZIndex = parent.ZIndex + i
+        blurFrame.Parent = parent
+        table.insert(blurFrames, blurFrame)
+    end
+    
+    return blurFrames
+end
+
+local function CreateEdgeHighlight(parent, intensity)
+    local highlight = Instance.new("Frame")
+    highlight.Name = "EdgeHighlight"
+    highlight.Size = UDim2.fromScale(1, 1)
+    highlight.BackgroundTransparency = 1
+    highlight.BorderSizePixel = 0
+    highlight.ZIndex = parent.ZIndex + 10
+    highlight.Parent = parent
+    
+    local topStroke = Instance.new("UIStroke")
+    topStroke.Color = Color3.new(1, 1, 1)
+    topStroke.Transparency = 1 - intensity
+    topStroke.Thickness = 1
+    topStroke.LineJoinMode = Enum.LineJoinMode.Round
+    topStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    topStroke.Parent = highlight
+    
+    local innerStroke = Instance.new("UIStroke")
+    innerStroke.Color = Color3.new(0, 0, 0)
+    innerStroke.Transparency = 0.7
+    innerStroke.Thickness = 1
+    innerStroke.LineJoinMode = Enum.LineJoinMode.Round
+    innerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    innerStroke.Parent = highlight
+    
+    return highlight
+end
+
+local function CreateDropShadow(parent, intensity, cornerRadius)
+    local shadowContainer = Instance.new("Frame")
+    shadowContainer.Name = "DropShadow"
+    shadowContainer.Size = UDim2.fromScale(1, 1)
+    shadowContainer.Position = UDim2.fromOffset(0, 0)
+    shadowContainer.BackgroundTransparency = 1
+    shadowContainer.BorderSizePixel = 0
+    shadowContainer.ZIndex = parent.ZIndex - 1
+    shadowContainer.Parent = parent.Parent or parent
+    
+    for i = 1, 3 do
+        local shadowLayer = Instance.new("Frame")
+        shadowLayer.Size = UDim2.fromScale(1, 1)
+        shadowLayer.Position = UDim2.fromOffset(i, i * 2)
+        shadowLayer.BackgroundColor3 = Color3.new(0, 0, 0)
+        shadowLayer.BackgroundTransparency = 1 - (intensity * (0.3 / i))
+        shadowLayer.BorderSizePixel = 0
+        shadowLayer.ZIndex = parent.ZIndex - 1
+        shadowLayer.Parent = shadowContainer
+        
+        if cornerRadius > 0 then
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(0, cornerRadius)
+            corner.Parent = shadowLayer
+        end
+    end
+    
+    return shadowContainer
+end
+
+-- Liquid Glass Element Class
+local LiquidGlassElement = {}
+LiquidGlassElement.__index = LiquidGlassElement
+
+function LiquidGlassElement.new(properties)
+    local self = setmetatable({}, LiquidGlassElement)
+    
+    self.Size = properties.Size or UDim2.fromOffset(200, 100)
+    self.Position = properties.Position or UDim2.fromOffset(0, 0)
+    self.AnchorPoint = properties.AnchorPoint or Vector2.zero
+    self.Visible = true
+    self.ZIndex = properties.ZIndex or 1
+    self.Parent = properties.Parent
+    self.BackgroundColor3 = properties.BackgroundColor3 or Color3.new(1, 1, 1)
+    self.BackgroundTransparency = properties.BackgroundTransparency or 0
+    self.Name = properties.Name or "LiquidGlassFrame"
+    
+    self.LiquidGlassEnabled = properties.LiquidGlassEnabled or false
+    self.BlurStrength = properties.BlurStrength or EmbeddedLiquidGlassModule.Config.BlurStrength
+    self.RefractionStrength = properties.RefractionStrength or EmbeddedLiquidGlassModule.Config.RefractionStrength
+    self.Opacity = properties.Opacity or EmbeddedLiquidGlassModule.Config.Opacity
+    self.CornerRadius = properties.CornerRadius or EmbeddedLiquidGlassModule.Config.CornerRadius
+    
+    self._mainFrame = nil
+    self._viewportFrame = nil
+    self._viewportCamera = nil
+    self._blurLayers = {}
+    self._edgeHighlight = nil
+    self._dropShadow = nil
+    self._noiseImage = nil
+    self._contentContainer = nil
+    self._baseBackground = nil
+    self._overlay = nil
+    self._isVisible = false
+    self._lastUpdate = 0
+    
+    return self
+end
+
+function LiquidGlassElement:Create()
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = self.Name
+    mainFrame.Size = self.Size
+    mainFrame.Position = self.Position
+    mainFrame.AnchorPoint = self.AnchorPoint
+    mainFrame.ZIndex = self.ZIndex
+    mainFrame.Visible = self.Visible
+    mainFrame.Parent = self.Parent
+    
+    if self.CornerRadius > 0 then
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, self.CornerRadius)
+        corner.Parent = mainFrame
+    end
+    
+    self._mainFrame = mainFrame
+    
+    local baseBackground = Instance.new("Frame")
+    baseBackground.Name = "BaseBackground"
+    baseBackground.Size = UDim2.fromScale(1, 1)
+    baseBackground.BackgroundColor3 = self.BackgroundColor3
+    baseBackground.BackgroundTransparency = self.BackgroundTransparency
+    baseBackground.BorderSizePixel = 0
+    baseBackground.ZIndex = self.ZIndex
+    baseBackground.Parent = mainFrame
+    
+    if self.CornerRadius > 0 then
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, self.CornerRadius)
+        corner.Parent = baseBackground
+    end
+    
+    self._baseBackground = baseBackground
+    
+    local contentContainer = Instance.new("Frame")
+    contentContainer.Name = "ContentContainer"
+    contentContainer.Size = UDim2.fromScale(1, 1)
+    contentContainer.BackgroundTransparency = 1
+    contentContainer.BorderSizePixel = 0
+    contentContainer.ZIndex = self.ZIndex + 5
+    contentContainer.Parent = mainFrame
+    
+    if self.CornerRadius > 0 then
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, self.CornerRadius)
+        corner.Parent = contentContainer
+    end
+    
+    self._contentContainer = contentContainer
+    
+    if self.LiquidGlassEnabled and EmbeddedLiquidGlassModule.Enabled then
+        self:_EnableLiquidGlassEffect()
+    end
+    
+    self._isVisible = self.Visible
+    
+    return self
+end
+
+function LiquidGlassElement:_EnableLiquidGlassEffect()
+    if not EmbeddedLiquidGlassModule.Enabled then
+        return
+    end
+    
+    if self._baseBackground then
+        self._baseBackground.BackgroundTransparency = 1
+    end
+    
+    local viewport, vpCamera = CreateViewportCapture(self._mainFrame)
+    self._viewportFrame = viewport
+    self._viewportCamera = vpCamera
+    
+    local blurColor = self.BackgroundColor3
+    self._blurLayers = ApplySimulatedBlur(self._mainFrame, self.BlurStrength, blurColor)
+    
+    local overlay = Instance.new("Frame")
+    overlay.Name = "GlassOverlay"
+    overlay.Size = UDim2.fromScale(1, 1)
+    overlay.BackgroundColor3 = self.BackgroundColor3
+    overlay.BackgroundTransparency = 1 - self.Opacity
+    overlay.BorderSizePixel = 0
+    overlay.ZIndex = self.ZIndex + 3
+    overlay.Parent = self._mainFrame
+    
+    if self.CornerRadius > 0 then
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, self.CornerRadius)
+        corner.Parent = overlay
+    end
+    
+    self._overlay = overlay
+    
+    self._edgeHighlight = CreateEdgeHighlight(self._mainFrame, EmbeddedLiquidGlassModule.Config.EdgeHighlightIntensity)
+    self._dropShadow = CreateDropShadow(self._mainFrame, EmbeddedLiquidGlassModule.Config.ShadowIntensity, self.CornerRadius)
+    
+    if EmbeddedLiquidGlassModule.Config.UseNoiseTexture then
+        local noise = Instance.new("ImageLabel")
+        noise.Name = "NoiseTexture"
+        noise.Size = UDim2.fromScale(1, 1)
+        noise.Image = "rbxassetid://12977615774"
+        noise.ImageTransparency = 1 - EmbeddedLiquidGlassModule.Config.NoiseOpacity
+        noise.ScaleType = Enum.ScaleType.Tile
+        noise.TileSize = UDim2.fromOffset(32, 32)
+        noise.ZIndex = self.ZIndex + 4
+        noise.Parent = self._mainFrame
+        
+        if self.CornerRadius > 0 then
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(0, self.CornerRadius)
+            corner.Parent = noise
+        end
+        
+        self._noiseImage = noise
+    end
+    
+    table.insert(EmbeddedLiquidGlassModule.ActiveElements, self)
+    
+    if not EmbeddedLiquidGlassModule._updateConnection then
+        EmbeddedLiquidGlassModule._updateConnection = RunService.RenderStepped:Connect(function(deltaTime)
+            EmbeddedLiquidGlassModule:_UpdateAllElements(deltaTime)
+        end)
+    end
+end
+
+function LiquidGlassElement:_DisableLiquidGlassEffect()
+    for i, element in ipairs(EmbeddedLiquidGlassModule.ActiveElements) do
+        if element == self then
+            table.remove(EmbeddedLiquidGlassModule.ActiveElements, i)
+            break
+        end
+    end
+    
+    if self._viewportFrame then
+        self._viewportFrame:Destroy()
+        self._viewportFrame = nil
+        self._viewportCamera = nil
+    end
+    
+    for _, layer in ipairs(self._blurLayers) do
+        layer:Destroy()
+    end
+    self._blurLayers = {}
+    
+    if self._overlay then
+        self._overlay:Destroy()
+        self._overlay = nil
+    end
+    
+    if self._edgeHighlight then
+        self._edgeHighlight:Destroy()
+        self._edgeHighlight = nil
+    end
+    
+    if self._dropShadow then
+        self._dropShadow:Destroy()
+        self._dropShadow = nil
+    end
+    
+    if self._noiseImage then
+        self._noiseImage:Destroy()
+        self._noiseImage = nil
+    end
+    
+    if self._baseBackground then
+        self._baseBackground.BackgroundTransparency = self.BackgroundTransparency
+    end
+    
+    if #EmbeddedLiquidGlassModule.ActiveElements == 0 and EmbeddedLiquidGlassModule._updateConnection then
+        EmbeddedLiquidGlassModule._updateConnection:Disconnect()
+        EmbeddedLiquidGlassModule._updateConnection = nil
+    end
+end
+
+function LiquidGlassElement:Update(deltaTime)
+    if not self.LiquidGlassEnabled or not EmbeddedLiquidGlassModule.Enabled then
+        return
+    end
+    
+    if not self._isVisible then
+        return
+    end
+    
+    local currentTime = tick()
+    if EmbeddedLiquidGlassModule.Config.UpdateThrottle > 0 then
+        if currentTime - self._lastUpdate < EmbeddedLiquidGlassModule.Config.UpdateThrottle then
+            return
+        end
+        self._lastUpdate = currentTime
+    end
+    
+    if self._viewportCamera and workspace.CurrentCamera then
+        self._viewportCamera.CFrame = workspace.CurrentCamera.CFrame
+        self._viewportCamera.FieldOfView = workspace.CurrentCamera.FieldOfView
+    end
+    
+    if self._viewportFrame then
+        local vpLighting = self._viewportFrame:FindFirstChildOfClass("Lighting")
+        if vpLighting then
+            vpLighting.Ambient = Lighting.Ambient
+            vpLighting.Brightness = Lighting.Brightness
+        end
+    end
+end
+
+function LiquidGlassElement:SetVisible(visible)
+    self.Visible = visible
+    if self._mainFrame then
+        self._mainFrame.Visible = visible
+    end
+    self._isVisible = visible
+end
+
+function LiquidGlassElement:SetPosition(position)
+    self.Position = position
+    if self._mainFrame then
+        self._mainFrame.Position = position
+    end
+end
+
+function LiquidGlassElement:SetSize(size)
+    self.Size = size
+    if self._mainFrame then
+        self._mainFrame.Size = size
+    end
+end
+
+function LiquidGlassElement:GetContentContainer()
+    return self._contentContainer
+end
+
+function LiquidGlassElement:Destroy()
+    self:_DisableLiquidGlassEffect()
+    
+    if self._mainFrame then
+        self._mainFrame:Destroy()
+        self._mainFrame = nil
+    end
+    
+    self._contentContainer = nil
+    self._baseBackground = nil
+end
+
+function EmbeddedLiquidGlassModule:_UpdateAllElements(deltaTime)
+    if #self.ActiveElements == 0 then
+        if self._updateConnection then
+            self._updateConnection:Disconnect()
+            self._updateConnection = nil
+        end
+        return
+    end
+    
+    for _, element in ipairs(self.ActiveElements) do
+        element:Update(deltaTime)
+    end
+end
+
+function EmbeddedLiquidGlassModule:SetEnabled(enabled)
+    self.Enabled = enabled
+    
+    if enabled then
+        for _, element in ipairs(self.ActiveElements) do
+            if element.LiquidGlassEnabled then
+                element:_EnableLiquidGlassEffect()
+            end
+        end
+    else
+        for _, element in ipairs(self.ActiveElements) do
+            element:_DisableLiquidGlassEffect()
+        end
+    end
+end
+
+function EmbeddedLiquidGlassModule:CreateElement(properties)
+    local element = LiquidGlassElement.new(properties)
+    element:Create()
+    return element
+end
+
+function EmbeddedLiquidGlassModule:CreateLiquidGlassFrame(parent, properties)
+    local props = properties or {}
+    props.Parent = parent
+    props.LiquidGlassEnabled = self.Enabled
+    
+    local element = self:CreateElement(props)
+    return element
+end
+
+function EmbeddedLiquidGlassModule:GetConfig()
+    return self.Config
+end
+
+function EmbeddedLiquidGlassModule:UpdateConfig(newConfig)
+    for key, value in pairs(newConfig) do
+        if self.Config[key] ~= nil then
+            self.Config[key] = value
+        end
+    end
+end
+
+-- Expose Liquid Glass API through Library
+Library.LiquidGlassModule = EmbeddedLiquidGlassModule
+
+function Library:SetLiquidGlassEnabled(enabled)
+    -- This should be called BEFORE creating windows
+    Library.LiquidGlass = enabled
+    if EmbeddedLiquidGlassModule then
+        EmbeddedLiquidGlassModule.Enabled = enabled
+    end
+end
+
+function Library:CreateLiquidGlassFrame(parent, properties)
+    if not EmbeddedLiquidGlassModule then
+        LoadLiquidGlassModule()
+    end
+    return EmbeddedLiquidGlassModule:CreateLiquidGlassFrame(parent, properties)
+end
 
 return Library, Toggles, Options
