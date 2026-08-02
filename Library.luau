@@ -95,7 +95,7 @@ local Library = {
     ScreenGui = ScreenGui;
     
     -- Liquid Glass Effect Settings
-    LiquidGlass = false; -- Toggle this BEFORE creating windows to enable liquid glass effect
+    LiquidGlass = true; -- Enabled by default for liquid glass effect
 };
 local Toggles = {}
 local Options = {}
@@ -114,7 +114,7 @@ end
 -- This is a self-contained version that works without external files
 local EmbeddedLiquidGlassModule = {
     -- Global toggle for all liquid glass effects
-    Enabled = false,
+    Enabled = true,
     
     -- All active liquid glass elements
     ActiveElements = {},
@@ -3571,6 +3571,23 @@ function Library:CreateWindow(...)
 
     if Config.AutoShow then task.spawn(Library.Toggle) end
 
+    -- Apply Liquid Glass effect to the window if enabled
+    if Window.IsLiquidGlass and EmbeddedLiquidGlassModule.Enabled then
+        local liquidFrame = EmbeddedLiquidGlassModule:CreateLiquidGlassFrame(Outer, {
+            Size = Outer.Size,
+            Position = Outer.Position,
+            AnchorPoint = Outer.AnchorPoint,
+            BackgroundColor3 = Library.MainColor,
+            CornerRadius = 8,
+            Opacity = 0.7,
+            BlurStrength = 0.6,
+            LiquidGlassEnabled = true,
+        })
+        liquidFrame:Create()
+        Outer.BackgroundTransparency = 1
+        Outer.BackgroundColor3 = Color3.new(0, 0, 0)
+    end
+
     Window.Holder = Outer;
 
     return Window;
@@ -3742,7 +3759,7 @@ function LiquidGlassElement.new(properties)
     self.BackgroundTransparency = properties.BackgroundTransparency or 0
     self.Name = properties.Name or "LiquidGlassFrame"
     
-    self.LiquidGlassEnabled = properties.LiquidGlassEnabled or false
+    self.LiquidGlassEnabled = properties.LiquidGlassEnabled ~= false
     self.BlurStrength = properties.BlurStrength or EmbeddedLiquidGlassModule.Config.BlurStrength
     self.RefractionStrength = properties.RefractionStrength or EmbeddedLiquidGlassModule.Config.RefractionStrength
     self.Opacity = properties.Opacity or EmbeddedLiquidGlassModule.Config.Opacity
