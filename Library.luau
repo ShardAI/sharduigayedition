@@ -3658,10 +3658,9 @@ local function CreateViewportCapture(parent)
     vpCamera.Parent = viewport
     viewport.CurrentCamera = vpCamera
     
-    local vpLighting = Instance.new("Lighting")
-    vpLighting.Parent = viewport
-    vpLighting.Ambient = Lighting.Ambient
-    vpLighting.Brightness = Lighting.Brightness
+    -- Копируем настройки освещения из глобального Lighting в ViewportFrame
+    viewport.Ambient = Lighting.Ambient
+    viewport.Brightness = Lighting.Brightness
     
     return viewport, vpCamera
 end
