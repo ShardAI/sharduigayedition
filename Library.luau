@@ -5,9 +5,17 @@ local Teams = game:GetService('Teams');
 local Players = game:GetService('Players');
 local RunService = game:GetService('RunService')
 local TweenService = game:GetService('TweenService');
+local Lighting = game:GetService('Lighting');
 local RenderStepped = RunService.RenderStepped;
 local LocalPlayer = Players.LocalPlayer;
 local Mouse = LocalPlayer:GetMouse();
+
+-- Helper function for clamping values (for older Luau versions)
+local function clamp(value, min, max)
+    if value < min then return min end
+    if value > max then return max end
+    return value
+end
 
 local ProtectGui = protectgui or (syn and syn.protect_gui) or (function() end);
 
@@ -961,11 +969,11 @@ do
                 while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
                     local MinX = SatVibMap.AbsolutePosition.X;
                     local MaxX = MinX + SatVibMap.AbsoluteSize.X;
-                    local MouseX = math.clamp(Mouse.X, MinX, MaxX);
+                    local MouseX = clamp(Mouse.X, MinX, MaxX);
 
                     local MinY = SatVibMap.AbsolutePosition.Y;
                     local MaxY = MinY + SatVibMap.AbsoluteSize.Y;
-                    local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
+                    local MouseY = clamp(Mouse.Y, MinY, MaxY);
 
                     ColorPicker.Sat = (MouseX - MinX) / (MaxX - MinX);
                     ColorPicker.Vib = 1 - ((MouseY - MinY) / (MaxY - MinY));
@@ -983,7 +991,7 @@ do
                 while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
                     local MinY = HueSelectorInner.AbsolutePosition.Y;
                     local MaxY = MinY + HueSelectorInner.AbsoluteSize.Y;
-                    local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
+                    local MouseY = clamp(Mouse.Y, MinY, MaxY);
 
                     ColorPicker.Hue = ((MouseY - MinY) / (MaxY - MinY));
                     ColorPicker:Display();
@@ -1015,7 +1023,7 @@ do
                     while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
                         local MinX = TransparencyBoxInner.AbsolutePosition.X;
                         local MaxX = MinX + TransparencyBoxInner.AbsoluteSize.X;
-                        local MouseX = math.clamp(Mouse.X, MinX, MaxX);
+                        local MouseX = clamp(Mouse.X, MinX, MaxX);
 
                         ColorPicker.Transparency = 1 - ((MouseX - MinX) / (MaxX - MinX));
 
@@ -2135,7 +2143,7 @@ do
                 return;
             end;
 
-            Num = math.clamp(Num, Slider.Min, Slider.Max);
+            Num = clamp(Num, Slider.Min, Slider.Max);
 
             Slider.Value = Num;
             Slider:Display();
@@ -2152,7 +2160,7 @@ do
 
                 while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
                     local nMPos = Mouse.X;
-                    local nX = math.clamp(gPos + (nMPos - mPos) + Diff, 0, Slider.MaxSize);
+                    local nX = clamp(gPos + (nMPos - mPos) + Diff, 0, Slider.MaxSize);
 
                     local nValue = Slider:GetValueFromXOffset(nX);
                     local OldValue = Slider.Value;
@@ -2500,7 +2508,7 @@ do
 
             Scrolling.CanvasSize = UDim2.fromOffset(0, (Count * 20) + 1);
 
-            local Y = math.clamp(Count * 20, 0, MAX_DROPDOWN_ITEMS * 20) + 1;
+            local Y = clamp(Count * 20, 0, MAX_DROPDOWN_ITEMS * 20) + 1;
             RecalculateListSize(Y);
         end;
 
@@ -2948,7 +2956,7 @@ end;
 
 function Library:CreateWindow(...)
     local Arguments = { ... }
-    local Config = { AnchorPoint = Vector2.zero }
+    local Config = { AnchorPoint = Vector2.new(0, 0) }
 
     if type(...) == 'table' then
         Config = ...;
@@ -3642,7 +3650,7 @@ local function CreateViewportCapture(parent)
 end
 
 local function ApplySimulatedBlur(parent, intensity, colorTint)
-    local layers = math.clamp(math.floor(intensity * 5), 1, 5)
+    local layers = clamp(math.floor(intensity * 5), 1, 5)
     local blurFrames = {}
     
     for i = 1, layers do
@@ -3726,7 +3734,7 @@ function LiquidGlassElement.new(properties)
     
     self.Size = properties.Size or UDim2.fromOffset(200, 100)
     self.Position = properties.Position or UDim2.fromOffset(0, 0)
-    self.AnchorPoint = properties.AnchorPoint or Vector2.zero
+    self.AnchorPoint = properties.AnchorPoint or Vector2.new(0, 0)
     self.Visible = true
     self.ZIndex = properties.ZIndex or 1
     self.Parent = properties.Parent
@@ -3939,7 +3947,7 @@ function LiquidGlassElement:Update(deltaTime)
         return
     end
     
-    local currentTime = tick()
+    local currentTime = os.clock()
     if EmbeddedLiquidGlassModule.Config.UpdateThrottle > 0 then
         if currentTime - self._lastUpdate < EmbeddedLiquidGlassModule.Config.UpdateThrottle then
             return
@@ -3947,9 +3955,10 @@ function LiquidGlassElement:Update(deltaTime)
         self._lastUpdate = currentTime
     end
     
-    if self._viewportCamera and workspace.CurrentCamera then
-        self._viewportCamera.CFrame = workspace.CurrentCamera.CFrame
-        self._viewportCamera.FieldOfView = workspace.CurrentCamera.FieldOfView
+    local currentCamera = workspace:FindFirstChildOfClass('Camera')
+    if self._viewportCamera and currentCamera then
+        self._viewportCamera.CFrame = currentCamera.CFrame
+        self._viewportCamera.FieldOfView = currentCamera.FieldOfView
     end
     
     if self._viewportFrame then
@@ -4074,6 +4083,10 @@ function Library:CreateLiquidGlassFrame(parent, properties)
     return EmbeddedLiquidGlassModule:CreateLiquidGlassFrame(parent, properties)
 end
 
-getgenv().Toggles = Toggles
-getgenv().Options = Options
+-- Safely assign to getgenv if it exists (for exploit environments)
+if getgenv then
+    getgenv().Toggles = Toggles
+    getgenv().Options = Options
+end
+
 return Library
