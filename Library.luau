@@ -4074,4 +4074,6 @@ function Library:CreateLiquidGlassFrame(parent, properties)
     return EmbeddedLiquidGlassModule:CreateLiquidGlassFrame(parent, properties)
 end
 
-return Library, Toggles, Options
+getgenv().Toggles = Toggles
+getgenv().Options = Options
+return Library
