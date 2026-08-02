@@ -3660,7 +3660,7 @@ local function CreateViewportCapture(parent)
     
     -- Копируем настройки освещения из глобального Lighting в ViewportFrame
     viewport.Ambient = Lighting.Ambient
-    viewport.Brightness = Lighting.Brightness
+    viewport.Brightness = clamp(Lighting.Brightness, 0, 5)
     
     return viewport, vpCamera
 end
