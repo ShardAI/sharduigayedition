@@ -9,7 +9,7 @@ local SaveManager = loadstring(game:HttpGet(REPO .. 'addons/SaveManager.luau'))(
 
 -- Set this before creating the main window. false keeps the original renderer.
 -- Without a source provider: live translucency, highlights and shadows (no screen capture).
-Library:SetLiquidGlass(true, {TileSize = 128, MaxSurfaces = 4, UpdateHz = 20})
+Library:SetLiquidGlass(true, {AutoBackdrop = true, TileSize = 128, MaxSurfaces = 4, UpdateHz = 20, BackdropResolution = 96})
 
 Library.ScreenGui.DisplayOrder = -1
 

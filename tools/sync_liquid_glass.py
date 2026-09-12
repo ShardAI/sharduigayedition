@@ -11,7 +11,19 @@ parser.add_argument('--check', action='store_true')
 args = parser.parse_args()
 library = root / 'Library.luau'
 text = library.read_text()
-source = (root / 'addons/LiquidGlass.luau').read_text()
+addon = root / 'addons/LiquidGlass.luau'
+source = addon.read_text()
+ba = '-- BEGIN GENERATED GUI BACKDROP\n'
+bb = '-- END GENERATED GUI BACKDROP\n'
+backdrop = ba + 'local GuiBackdrop = (function()\n' + (root / 'addons/GuiBackdrop.luau').read_text() + '\nend)()\n' + bb
+a = source.index(ba)
+b = source.index(bb, a) + len(bb)
+updated_source = source[:a] + backdrop + source[b:]
+if args.check and updated_source != source:
+    raise SystemExit('GuiBackdrop bundle is stale; run tools/sync_liquid_glass.py')
+if not args.check:
+    addon.write_text(updated_source)
+source = updated_source
 block = start + 'local LiquidGlass = (function()\n' + source + '\nend)()\n' + end
 if start in text:
     a = text.index(start)

@@ -9,6 +9,7 @@ root = Path(__file__).resolve().parents[1]
 code = (root / 'tests/RobloxMock.luau').read_text()
 code += '\nlocal Glass = (function()\n' + (root / 'addons/LiquidGlass.luau').read_text() + '\nend)()\n'
 code += (root / 'tests/LiquidGlass.spec.luau').read_text()
+code += (root / 'tests/GuiBackdrop.spec.luau').read_text()
 library = (root / 'Library.luau').read_text()
 start = library.index('local function getGlassManager()')
 end = library.index('function Library:ApplyTextStroke', start)

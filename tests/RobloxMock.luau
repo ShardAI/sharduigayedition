@@ -40,7 +40,12 @@ function methods:IsA(class)
         or class == 'UILayout' and self.ClassName == 'UIListLayout'
 end
 function methods:GetAttribute(name) return self._attrs[name] end
-function methods:SetAttribute(name, value) self._attrs[name] = value end
+function methods:GetAttributes() return table.clone(self._attrs) end
+function methods:SetAttribute(name, value)
+    if self._attrs[name] == value then return end
+    self._attrs[name] = value
+    self.AttributeChanged:Fire(name)
+end
 function methods:GetChildren() return table.clone(self._children) end
 function methods:FindFirstChildOfClass(class)
     for _, child in ipairs(self._children) do if child.ClassName == class then return child end end
@@ -65,7 +70,8 @@ function Instance.new(class)
         AbsolutePosition = Vector2.zero, AbsoluteSize = Vector2.new(100, 100),
         AbsoluteRotation = 0, Rotation = 0, AutomaticSize = 'None', ZIndex = 1,
         ClipsDescendants = false, ZIndexBehavior = 'Sibling', Destroying = signal(),
-        MouseEnter = signal(), MouseLeave = signal()},
+        MouseEnter = signal(), MouseLeave = signal(), Changed = signal(), AttributeChanged = signal(),
+        DescendantAdded = signal(), DescendantRemoving = signal(), DisplayOrder = 0},
         _attrs = {}, _children = {}}
     return setmetatable(self, {
         __index = function(t, k)
@@ -75,12 +81,20 @@ function Instance.new(class)
         end,
         __newindex = function(t, k, v)
             if k:sub(1, 1) == '_' then rawset(t, k, v); return end
+            if t._props[k] == v then return end
             if k == 'Parent' then
+                local node = t._props.Parent
+                while node do node.DescendantRemoving:Fire(t); node = node.Parent end
                 local old = t._props.Parent
                 if old then table.remove(old._children, table.find(old._children, t)) end
                 if v then table.insert(v._children, t) end
             end
             t._props[k] = v
+            t.Changed:Fire(k)
+            if k == 'Parent' then
+                local node = v
+                while node do node.DescendantAdded:Fire(t); node = node.Parent end
+            end
         end,
     })
 end
